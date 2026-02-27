@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+
+# ==============================
+# Configuración
+# ==============================
+API_TOKEN="xxxxxxxx"
+API_URL="https://ipinfo.io"
+
+
+# ==============================
+# Obtener entrada (argumentos o pipe)
+# ==============================
+if [ -t 0 ]; then
+  INPUT="$*"
+else
+  INPUT="$(cat)"
+fi
+
+if [ -z "$INPUT" ]; then
+  echo "Uso:"
+  echo "checkip 8.8.8.8 1.1.1.1"
+  echo "echo '8.8.8.8 # fecha' | checkip"
+  exit 1
+fi
+
+# ==============================
+# Extraer IPs válidas
+# ==============================
+IPS=$(echo "$INPUT" | grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}' | sort -u)
+
+if [ -z "$IPS" ]; then
+  echo "No se encontraron IPs válidas."
+  exit 1
+fi
+
+# ==============================
+# Consultar API
+# ==============================
+for ip in $IPS; do
+  printf "\n🔎 %s\n" "$ip"
+
+  response=$(curl -s --max-time 5 \
+    "$API_URL/$ip?token=$API_TOKEN")
+
+  if echo "$response" | grep -q '"bogon":'; then
+    echo "IP privada / reservada"
+    continue
+  fi
+
+  if echo "$response" | grep -q '"error"'; then
+    echo "Error consultando API"
+    continue
+  fi
+
+  echo "$response" | jq -r '
+    "País: " + (.country // "N/A") +
+    " | Región: " + (.region // "N/A") +
+    " | Ciudad: " + (.city // "N/A") +
+    " | Org: " + (.org // "N/A")'
+done
