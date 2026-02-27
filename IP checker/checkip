@@ -3,7 +3,7 @@
 # ==============================
 # Configuración
 # ==============================
-API_TOKEN="xxxxxxxx"
+API_TOKEN="TU_TOKEN_AQUI"
 API_URL="https://ipinfo.io"
 
 
